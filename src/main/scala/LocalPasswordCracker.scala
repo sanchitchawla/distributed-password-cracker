@@ -3,7 +3,7 @@ import org.apache.commons.codec.digest.Crypt
 /**
   * Created by sanch on 23-Jan-18.
   */
-object PasswordCracker {
+object LocalPasswordCracker {
 
   val all_chars: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
 
