@@ -5,7 +5,11 @@ import org.apache.commons.codec.digest.Crypt
   */
 object LocalPasswordCracker {
 
-  val all_chars: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
+  val temp = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
+  val all_chars: HashMap[Char,Char] = new HashMap()
+  for( i <- 0 to temp.length-1){
+    all_chars += (temp(i%temp.length)->temp((i+1)%temp.length))
+  }
 
   def cracker(startRange: String, endRange: String, hash:String): Boolean ={
     def helper(curr: String, found: Boolean): Boolean = {
@@ -21,8 +25,7 @@ object LocalPasswordCracker {
   def getHashed(curr: String): String = Crypt.crypt(curr, "ic")
 
   def nextChar(c: Char): Char = {
-    val cur_i = all_chars.indexOf(c)
-    all_chars((cur_i+1)%all_chars.length)
+    all_chars(c)
   }
 
   def flip(s: List[Char]): List[Char] = {
