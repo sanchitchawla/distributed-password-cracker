@@ -6,7 +6,7 @@ import scalaj.http.{Http, HttpResponse}
 class Server {
 
   def receive(): String ={
-    val response = Http("localhost").param("try", "try2").asString
+    val response = Http("localhost").asString
     response.body
   }
 
