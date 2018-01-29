@@ -1,13 +1,15 @@
 import org.apache.commons.codec.digest.Crypt
 
+import scala.collection.mutable.HashMap
+
 /**
   * Created by sanch on 23-Jan-18.
   */
 object LocalPasswordCracker {
 
-  val temp = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
+  val temp: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
   val all_chars: HashMap[Char,Char] = new HashMap()
-  for( i <- 0 to temp.length-1){
+  for(i <- temp.indices){
     all_chars += (temp(i%temp.length)->temp((i+1)%temp.length))
   }
 

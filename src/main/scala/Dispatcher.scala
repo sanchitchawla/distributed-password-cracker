@@ -1,4 +1,4 @@
-import scalaj.http.{Http, HttpOptions, HttpResponse}
+import scalaj.http.{Http, HttpOptions}
 
 /**
   * Created by sanch on 25-Jan-18.
