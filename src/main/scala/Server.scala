@@ -1,13 +1,12 @@
-import scalaj.http.{Http, HttpResponse}
 
 /**
   * Created by sanch on 29-Jan-18.
   */
-class Server {
+class Server(url: String) {
 
   def receive(): String ={
-    val response = Http("localhost").asString
-    response.body
+    val result = scala.io.Source.fromURL(url).mkString
+    result
   }
 
   def distributeChunks(): Unit ={

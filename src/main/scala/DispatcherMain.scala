@@ -3,12 +3,16 @@
   */
 object DispatcherMain {
 
-  val receiver = ""
-  val startRange = "AA"
-  val endRange = "9999A"
-  val hash = "icMez.omxHuqU"
+  def main(args: Array[String]): Unit = {
 
-  val dispatcher: Dispatcher = new Dispatcher(receiver, startRange, endRange, hash)
+    val receiver = ""
+    val startRange = "AA"
+    val endRange = "9999A"
+    val hash = "icMez.omxHuqU"
 
-  dispatcher.send()
+    val dispatcher: Dispatcher = new Dispatcher(receiver, startRange, endRange, hash)
+
+    dispatcher.send()
+  }
+
 }
