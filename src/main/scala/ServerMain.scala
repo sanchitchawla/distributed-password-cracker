@@ -59,7 +59,7 @@ object ServerMain{
     var i = 0L
 
     while (i<n){
-      rs = getNext(rs);
+      rs = getNext(rs)
       i+=1
     }
     rs
@@ -68,17 +68,14 @@ object ServerMain{
   def findSize(startString: String, endString: String): Long = {
     toLong(endString) - toLong(startString) + 1
   }
-  def main(args: Array[String]): Unit = {
+//  def main(args: Array[String]): Unit = {)
 
-    //  val server = new Server("local")
-    //  println(server.receive())
-
-    println(toLong("A"))
-    println(toLong("AA"))
-    println(findSize("A","AD"))
-    println(nextN("A",62))
+//    println(toLong("A"))
+//    println(toLong("AA"))
+//    println(findSize("A","AD"))
+//    println(nextN("A",62))
 
 
-  }
+//  }
 
 }

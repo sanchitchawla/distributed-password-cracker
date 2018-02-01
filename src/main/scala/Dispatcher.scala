@@ -1,7 +1,7 @@
 
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.{HttpClientBuilder}
+import org.apache.http.impl.client.HttpClientBuilder
 import com.google.gson.Gson
 /**
   * Created by sanch on 25-Jan-18.
@@ -25,9 +25,9 @@ class Dispatcher(receiver: String, startRange: String, endRange: String, hash:St
     // send the post request
     val response = HttpClientBuilder.create().build().execute(post)
 //
-//    // print the response headers
-//    println("--- HEADERS ---")
-//    response.getAllHeaders.foreach(arg => println(arg))
+    // print the response headers
+    println("--- HEADERS ---")
+    response.getAllHeaders.foreach(arg => println(arg))
   }
 
 }
