@@ -14,7 +14,7 @@ class Dispatcher(receiver: String, startRange: String, endRange: String, hash:St
     val Json = new Gson().toJson(Seq("startRange" -> startRange, "endRange" -> endRange, "hash" -> hash))
 
     // create an HttpPost object
-    val post = new HttpPost("http://localhost:8080/post")
+    val post = new HttpPost(receiver)
 
     // set the Content-type
     post.setHeader("Content-type", "application/json")

@@ -13,6 +13,47 @@ object ServerMain{
     all_chars += (temp(i%temp.length)->temp((i+1)%temp.length))
   }
 
+  var workerToJob = new HashMap[String,Job]()
+
+  var jobIdToSize = new HashMap[Int,Long]()
+
+  val CHUNKSIZE = 62
+
+  def setJob(worker: String,job: Job): Unit = {
+    workerToJob += (worker -> job)
+  }
+
+  def storeJobSize(jobId: Int, totalSize: Long): Unit ={
+    jobIdToSize += (jobId -> totalSize)
+  }
+
+  def jobChunkDone(job: Job): Unit ={
+    val jobId = job.getJobId()
+    jobIdToSize(jobId) = jobIdToSize(jobId)-CHUNKSIZE
+
+    if(jobIdToSize(jobId) <= 0){
+      // post to dispatcher
+    }
+  }
+
+  def splitAndQueue(start:String , end: String): Unit ={
+    var currentEnd = start
+    var currentStart = start
+    while (toLong(currentEnd) < toLong(end)){
+
+      currentEnd = nextN(currentEnd,CHUNKSIZE-1)
+      if(toLong(currentEnd)>toLong(end)) currentEnd = end
+
+      println(currentStart,currentEnd)
+      // add to queue
+      currentStart = nextN(currentEnd,1)
+    }
+
+  }
+
+
+
+
   def nextChar(c: Char): Char = {
     all_chars(c)
   }
@@ -70,13 +111,13 @@ object ServerMain{
   }
   def main(args: Array[String]): Unit = {
 
-    //  val server = new Server("local")
-    //  println(server.receive())
+      val server = new Server("local")
+      println(server.receive())
 
-    println(toLong("A"))
-    println(toLong("AA"))
-    println(findSize("A","AD"))
-    println(nextN("A",62))
+//    println(toLong("A"))
+//    println(toLong("AA"))
+//    println(findSize("A","AD"))
+//    println(nextN("A",62))
 
 
   }

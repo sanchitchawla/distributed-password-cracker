@@ -5,7 +5,9 @@ object DispatcherMain {
 
   def main(args: Array[String]): Unit = {
 
-    val receiver = ""
+    // input: serverip, port, hash
+
+    val receiver = "http://192.168.1.138:8082/item/80"
     val startRange = "AA"
     val endRange = "9999A"
     val hash = "icMez.omxHuqU"

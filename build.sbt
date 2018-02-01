@@ -11,3 +11,7 @@ libraryDependencies ++= Seq(
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.5"
 
 libraryDependencies += "com.google.code.gson" % "gson" % "1.7.1"
+
+libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
+
+
