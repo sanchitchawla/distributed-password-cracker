@@ -1,16 +1,53 @@
 
-import scala.collection.mutable.HashMap
+import scala.collection.mutable
 
 /**
   * Created by sanch on 29-Jan-18.
   */
 object ServerMain{
-
-
+  
   val temp: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
-  val all_chars: HashMap[Char,Char] = new HashMap()
+  val all_chars: mutable.HashMap[Char,Char] = new mutable.HashMap()
   for(i <- temp.indices){
     all_chars += (temp(i%temp.length)->temp((i+1)%temp.length))
+  }
+
+  var workerToJob = new mutable.HashMap[String,Job]()
+
+  var jobIdToSize = new mutable.HashMap[Int,Long]()
+
+  val CHUNK_SIZE = 62
+
+  def setJob(worker: String,job: Job): Unit = {
+    workerToJob += (worker -> job)
+  }
+
+  def storeJobSize(jobId: Int, totalSize: Long): Unit ={
+    jobIdToSize += (jobId -> totalSize)
+  }
+
+  def jobChunkDone(job: Job): Unit ={
+    val jobId = job.getJobId
+    jobIdToSize(jobId) = jobIdToSize(jobId)-CHUNK_SIZE
+
+    if(jobIdToSize(jobId) <= 0){
+      // The entire Job is completed
+    }
+  }
+
+  def splitAndQueue(start:String , end: String): Unit ={
+    var currentEnd = start
+    var currentStart = start
+    while (toLong(currentEnd) < toLong(end)){
+
+      currentEnd = nextN(currentEnd,CHUNK_SIZE-1)
+      if(toLong(currentEnd)>toLong(end)) currentEnd = end
+
+      println(currentStart,currentEnd)
+      // add to queue
+      currentStart = nextN(currentEnd,1)
+    }
+
   }
 
   def nextChar(c: Char): Char = {
@@ -68,14 +105,5 @@ object ServerMain{
   def findSize(startString: String, endString: String): Long = {
     toLong(endString) - toLong(startString) + 1
   }
-//  def main(args: Array[String]): Unit = {)
-
-//    println(toLong("A"))
-//    println(toLong("AA"))
-//    println(findSize("A","AD"))
-//    println(nextN("A",62))
-
-
-//  }
 
 }

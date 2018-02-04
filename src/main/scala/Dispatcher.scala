@@ -6,6 +6,8 @@ import com.google.gson.Gson
 /**
   * Created by sanch on 25-Jan-18.
   */
+
+// Left with PING and Cancel
 class Dispatcher(receiver: String, startRange: String, endRange: String, hash:String) {
 
   def send(): Unit ={
