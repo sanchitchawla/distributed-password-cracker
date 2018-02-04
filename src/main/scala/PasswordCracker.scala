@@ -5,7 +5,7 @@ import scala.collection.mutable.HashMap
 /**
   * Created by sanch on 23-Jan-18.
   */
-object LocalPasswordCracker {
+object PasswordCracker {
 
   val temp: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
   val all_chars: HashMap[Char,Char] = new HashMap()
@@ -53,8 +53,10 @@ object LocalPasswordCracker {
   }
 
   def main(args: Array[String]): Unit = {
-    println(cracker("A", "AAAAD", "icMez.omxHuqU"))
-    println(Crypt.crypt("9999", "ic"))
+//    println(cracker("A", "AAAAD", "icMez.omxHuqU"))
+//    println(Crypt.crypt("9999", "ic"))
+
+
   }
 
 }

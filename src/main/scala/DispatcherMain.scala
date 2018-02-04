@@ -5,7 +5,7 @@ object DispatcherMain {
 
   def main(args: Array[String]): Unit = {
 
-    val receiver = ""
+    val receiver = "/createJob"
     val startRange = "AA"
     val endRange = "9999A"
     val hash = "icMez.omxHuqU"
