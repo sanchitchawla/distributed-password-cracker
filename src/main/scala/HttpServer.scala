@@ -22,13 +22,13 @@ object HttpServer {
 
   var jobId: AtomicInteger = new AtomicInteger(1)
 
-  var jobs: List[Job] = List(Job(1,"A", "AAA", "hduiwgfe"))
+  var jobs: List[Job] = List()
 
-  final case class dispatchedJob(startString: String, endString: String, hash: String)
+  final case class dispatchedJob(hash: String)
 
   // formats for unmarshalling and marshalling
   implicit val jobFormat = jsonFormat4(Job)
-  implicit val dispatchedJobFormat = jsonFormat3(dispatchedJob)
+  implicit val dispatchedJobFormat = jsonFormat1(dispatchedJob)
 
   // (fake) async database query api
   def fetchItem(jobId: Long): Future[Option[Job]] = Future {
@@ -37,7 +37,7 @@ object HttpServer {
 
   def saveJob(job: dispatchedJob): Future[Done] = {
     jobs = job match {
-      case dispatchedJob(startString, endString, hash) => Job(jobId.getAndIncrement(), startString, endString, hash) :: jobs
+      case dispatchedJob(hash) => Job(jobId.getAndIncrement(), "A", "99999999", hash) :: jobs
       case _            => jobs
     }
     Future { Done }
@@ -74,6 +74,10 @@ object HttpServer {
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
       .onComplete(_ ⇒ system.terminate()) // and shutdown when done
-
+    sys.addShutdownHook({
+      println("Shutting down workers ")
+      // Call shutdown function which sends a post and gets back
+      println("All workers are safely shut")
+    })
   }
 }

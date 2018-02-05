@@ -7,16 +7,16 @@ import com.google.gson.Gson
   * Created by sanch on 25-Jan-18.
   */
 
-// Left with PING and Cancel
-class Dispatcher(receiver: String, startRange: String, endRange: String, hash:String) {
+// Left with PING
+class Dispatcher(hash:String) {
 
   def send(): Unit ={
 
     // convert it to a JSON string
-    val Json = new Gson().toJson(Seq("startRange" -> startRange, "endRange" -> endRange, "hash" -> hash))
+    val Json = new Gson().toJson("hash" -> hash)
 
     // create an HttpPost object
-    val post = new HttpPost("http://localhost:8080/post")
+    val post = new HttpPost("http://localhost:8082/post")
 
     // set the Content-type
     post.setHeader("Content-type", "application/json")
@@ -30,6 +30,9 @@ class Dispatcher(receiver: String, startRange: String, endRange: String, hash:St
 //    println("--- HEADERS ---")
 //    response.getAllHeaders.foreach(arg => println(arg))
   }
+
+
+
 
 }
 

@@ -106,4 +106,11 @@ object ServerMain{
     toLong(endString) - toLong(startString) + 1
   }
 
+  def shutdownWorkers(): Unit = {
+    // TODO: Send a post request to all the workers and receive an ack back to shutdown
+
+  }
+
+  // TODO:  Generate range and give startString and endString to every worker
+
 }
