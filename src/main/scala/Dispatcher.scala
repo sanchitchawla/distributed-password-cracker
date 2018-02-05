@@ -30,6 +30,9 @@ class Dispatcher(receiver: String, hash:String) {
 //    println("--- HEADERS ---")
 //    response.getAllHeaders.foreach(arg => println(arg))
 
+  }
+
+  def ping() = {
     // Ping
     val command = "ping " + receiver
     val p : Process = Runtime.getRuntime.exec(command)
