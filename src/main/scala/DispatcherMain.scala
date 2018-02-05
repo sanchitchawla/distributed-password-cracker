@@ -10,7 +10,7 @@ object DispatcherMain {
     val endRange = "9999A"
     val hash = "icMez.omxHuqU"
 
-    val dispatcher: Dispatcher = new Dispatcher(receiver, startRange, endRange, hash)
+    val dispatcher: Dispatcher = new Dispatcher(receiver,hash)
 
     dispatcher.send()
   }

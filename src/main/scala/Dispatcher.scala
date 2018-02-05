@@ -1,3 +1,4 @@
+import java.io.{BufferedReader, InputStreamReader}
 
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
@@ -7,8 +8,7 @@ import com.google.gson.Gson
   * Created by sanch on 25-Jan-18.
   */
 
-// Left with PING
-class Dispatcher(hash:String) {
+class Dispatcher(receiver: String, hash:String) {
 
   def send(): Unit ={
 
@@ -16,7 +16,7 @@ class Dispatcher(hash:String) {
     val Json = new Gson().toJson("hash" -> hash)
 
     // create an HttpPost object
-    val post = new HttpPost("http://localhost:8082/post")
+    val post = new HttpPost(receiver)
 
     // set the Content-type
     post.setHeader("Content-type", "application/json")
@@ -29,6 +29,16 @@ class Dispatcher(hash:String) {
     // print the response headers
 //    println("--- HEADERS ---")
 //    response.getAllHeaders.foreach(arg => println(arg))
+
+    // Ping
+    val command = "ping " + receiver
+    val p : Process = Runtime.getRuntime.exec(command)
+    val inputStreamReader = new BufferedReader(new InputStreamReader(p.getInputStream))
+
+    var s: String = ""
+    while ((s = inputStreamReader.readLine()) != null) {
+      println(s)
+    }
   }
 
 
