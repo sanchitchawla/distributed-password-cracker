@@ -5,54 +5,70 @@ import scala.collection.mutable.HashMap
   * Created by sanch on 29-Jan-18.
   */
 object ServerMain{
-
-
+  
   val temp: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
   val all_chars: HashMap[Char,Char] = new HashMap()
   for(i <- temp.indices){
     all_chars += (temp(i%temp.length)->temp((i+1)%temp.length))
   }
 
-  //  map workerip to Job class(containing id,start,end)
-  var workerToJob = new HashMap[String,Job]()
-
-  //  map jobId to Total size remain
-  var jobIdToSize = new HashMap[Int,Long]()
-
-  // map jobId to client(dispatcher)
-  var jobIdToIp = new HashMap[Int,String]()
-
-
-
-  val CHUNKSIZE = 62
+//  //  map workerip to Job class(containing id,start,end)
+//  var workerToJob = new HashMap[String,Job]()
+//
+//  //  map jobId to Total size remain
+//  var jobIdToSize = new HashMap[Int,Long]()
+//
+//  // map jobId to client(dispatcher)
+//  var jobIdToIp = new HashMap[Int,String]()
+//
+//
+//
+//  val CHUNKSIZE = 62
 
   // add (workerid->job) hash
+  var workerToJob = new HashMap[String,Job]()
+
+  var jobIdToSize = new HashMap[Int,Long]()
+
+  val CHUNK_SIZE = 62
+
   def setJob(worker: String,job: Job): Unit = {
     workerToJob += (worker -> job)
   }
 
   // add (jobid->totalchunksize) map initially
+
   def storeJobSize(jobId: Int, totalSize: Long): Unit ={
     jobIdToSize += (jobId -> totalSize)
   }
 
-  // reduce totalsize remains of jobId in hashmap
+//  // reduce totalsize remains of jobId in hashmap
+//  def jobChunkDone(job: Job): Unit ={
+//    val jobId = job.getJobId()
+//    jobIdToSize(jobId) = jobIdToSize(jobId)-CHUNKSIZE
+//
+//    if(jobIdToSize(jobId) <= 0){
+//      // post to dispatcher
+//    }
+//  }
+
+  // divide workload equally and add to queue
   def jobChunkDone(job: Job): Unit ={
-    val jobId = job.getJobId()
-    jobIdToSize(jobId) = jobIdToSize(jobId)-CHUNKSIZE
+    val jobId = job.getJobId
+    jobIdToSize(jobId) = jobIdToSize(jobId)-CHUNK_SIZE
 
     if(jobIdToSize(jobId) <= 0){
-      // post to dispatcher
+      // The entire Job is completed
     }
   }
 
-  // divide workload equally and add to queue
   def splitAndQueue(start:String , end: String): Unit ={
     var currentEnd = start
     var currentStart = start
     while (toLong(currentEnd) < toLong(end)){
       currentEnd = currentStart
-      currentEnd = nextN(currentEnd,CHUNKSIZE-1)
+      currentEnd = nextN(currentEnd,CHUNK_SIZE-1)
+
       if(toLong(currentEnd)>toLong(end)) currentEnd = end
 
       println(currentStart,currentEnd)
@@ -111,7 +127,7 @@ object ServerMain{
     var i = 0L
 
     while (i<n){
-      rs = getNext(rs);
+      rs = getNext(rs)
       i+=1
     }
     rs
@@ -122,16 +138,21 @@ object ServerMain{
   }
   def main(args: Array[String]): Unit = {
 
-//      val server = new Server("local")
-//      println(server.receive())
-    splitAndQueue("A","BB")
+    //      val server = new Server("local")
+    //      println(server.receive())
+    splitAndQueue("A", "BB")
 
-//    println(toLong("A"))
-//    println(toLong("AA"))
-//    println(findSize("A","AD"))
-//    println(nextN("A",62))
+    //    println(toLong("A"))
+    //    println(toLong("AA"))
+    //    println(findSize("A","AD"))
+    //    println(nextN("A",62))
 
 
   }
+  def shutdownWorkers(): Unit = {
+    // TODO: Send a post request to all the workers and receive an ack back to shutdown
+
+  }
+  // TODO:  Generate range and give startString and endString to every worker
 
 }
