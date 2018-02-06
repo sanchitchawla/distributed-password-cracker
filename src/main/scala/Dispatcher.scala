@@ -12,8 +12,10 @@ class Dispatcher(receiver: String, hash:String) {
 
   def send(): Unit ={
 
-    // convert it to a JSON string
-    val Json = new Gson().toJson("hash" -> hash)
+    val json = new HashValue(hash)
+    val Json = new Gson().toJson(json)
+
+    println(Json)
 
     // create an HttpPost object
     val post = new HttpPost(receiver)
@@ -26,13 +28,14 @@ class Dispatcher(receiver: String, hash:String) {
 
     // send the post request
     val response = HttpClientBuilder.create().build().execute(post)
+
     // print the response headers
-//    println("--- HEADERS ---")
-//    response.getAllHeaders.foreach(arg => println(arg))
+    println("--- HEADERS ---")
+    response.getAllHeaders.foreach(arg => println(arg))
 
   }
 
-  def ping() = {
+  def ping(): Unit = {
     // Ping
     val command = "ping " + receiver
     val p : Process = Runtime.getRuntime.exec(command)
@@ -44,9 +47,9 @@ class Dispatcher(receiver: String, hash:String) {
     }
   }
 
-
-
-
+  class HashValue (var hash: String) {
+    override def toString = "hash" + ", " + hash
+  }
 }
 
 

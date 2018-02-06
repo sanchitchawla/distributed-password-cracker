@@ -1,5 +1,10 @@
 
-import scala.collection.mutable.HashMap
+import com.google.gson.Gson
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.HttpClientBuilder
+
+import scala.collection.{Set, mutable}
 
 /**
   * Created by sanch on 29-Jan-18.
@@ -7,7 +12,8 @@ import scala.collection.mutable.HashMap
 object ServerMain{
   
   val temp: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
-  val all_chars: HashMap[Char,Char] = new HashMap()
+  val all_chars: mutable.HashMap[Char,Char] = new mutable.HashMap()
+
   for(i <- temp.indices){
     all_chars += (temp(i%temp.length)->temp((i+1)%temp.length))
   }
@@ -26,9 +32,9 @@ object ServerMain{
 //  val CHUNKSIZE = 62
 
   // add (workerid->job) hash
-  var workerToJob = new HashMap[String,Job]()
+  var workerToJob = new mutable.HashMap[String,Job]()
 
-  var jobIdToSize = new HashMap[Int,Long]()
+  var jobIdToSize = new mutable.HashMap[Int,Long]()
 
   val CHUNK_SIZE = 62
 
@@ -150,9 +156,30 @@ object ServerMain{
 
   }
   def shutdownWorkers(): Unit = {
-    // TODO: Send a post request to all the workers and receive an ack back to shutdown
+
+    val allWorkers: Set[String] = workerToJob.keySet
+
+    for (eachWorker <- allWorkers) sendSignaltoWorker(eachWorker)
+  }
+  def sendSignaltoWorker(receiver: String): Unit ={
+
+    val json = new Status("stop")
+    val Json = new Gson().toJson(json)
+
+    println(Json)
+    val post = new HttpPost(receiver)
+
+    post.setHeader("Content-type", "application/json")
+    post.setEntity(new StringEntity(Json))
+
+    val response = HttpClientBuilder.create().build().execute(post)
+
+    println("--- HEADERS ---")
+    response.getAllHeaders.foreach(arg => println(arg))
 
   }
-  // TODO:  Generate range and give startString and endString to every worker
 
+  class Status (var status: String) {
+    override def toString = "status" + ", " + status
+  }
 }

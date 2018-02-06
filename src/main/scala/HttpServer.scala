@@ -176,7 +176,7 @@ object HttpServer {
       .onComplete(_ ⇒ system.terminate()) // and shutdown when done
     sys.addShutdownHook({
       println("Shutting down workers ")
-      // Call shutdown function which sends a post and gets back
+      ServerMain.shutdownWorkers()
       println("All workers are safely shut")
     })
   }

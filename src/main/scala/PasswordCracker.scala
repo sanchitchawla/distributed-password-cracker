@@ -54,11 +54,4 @@ object PasswordCracker {
     flip(inputString.toList).mkString
   }
 
-  def main(args: Array[String]): Unit = {
-//    println(cracker("A", "AAAAD", "icMez.omxHuqU"))
-//    println(Crypt.crypt("9999", "ic"))
-
-
-  }
-
 }
