@@ -1,11 +1,26 @@
+
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.Directives._
+import akka.stream.ActorMaterializer
 import com.google.gson.Gson
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.HttpClientBuilder
 
-class JobFetcher {
+import scala.concurrent.ExecutionContextExecutor
+import scala.io.StdIn
 
-  val server = "http://192.168.1.138:8082/item/80"
+
+object JobFetcher {
+
+  implicit val system = ActorSystem()
+  implicit val materializer = ActorMaterializer()
+  // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+
+  val server = "http://192.168.1.138:8082/worker"
 
   var status = "NOT_DONE"
 
@@ -14,7 +29,7 @@ class JobFetcher {
     // TODO: get a job from Queue
 
     val job = Job(1, "BA", "CA", "wertgv34")
-    done = "NOT_DONE"
+    status = "NOT_DONE"
 
     // TODO: check whether that jobId is done (from redis)
 
@@ -53,19 +68,34 @@ class JobFetcher {
     println("--- HEADERS ---")
     response.getAllHeaders.foreach(arg => println(arg))
 
-    class StatusValue(status: Boolean){
-      override def toString = "hash, " + status
-    }
 
+
+  }
+
+  class StatusValue(status: String){
+    override def toString = "status, " + status
   }
 
 
   def main(args: Array[String]): Unit = {
 
 
+//        postStatus()
+    //    getJobfromQueue()
 
-    //    val receiver = "http://localhost.com:8082/createJob"
+    val route: Route =
+      get {
+        pathPrefix("ping") {
+          // returning status
+          complete(status)
+        }
+      }
 
-
+    val bindingFuture = Http().bindAndHandle(route,"0.0.0.0", 8084)
+    println(s"Worker online at http://0.0.0.0:8082/\nPress RETURN to stop...")
+    StdIn.readLine() // let it run until user presses return
+    bindingFuture
+      .flatMap(_.unbind()) // trigger unbinding from the port
+      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
   }
 }
