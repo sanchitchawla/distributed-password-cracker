@@ -10,6 +10,8 @@ import scala.collection.{Set, mutable}
   * Created by sanch on 29-Jan-18.
   */
 object ServerMain{
+
+  //not used
   
   val temp: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
   val all_chars: mutable.HashMap[Char,Char] = new mutable.HashMap()

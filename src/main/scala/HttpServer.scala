@@ -103,7 +103,7 @@ object HttpServer {
 
       if(toLong(currentEnd)>toLong(end)) currentEnd = end
 
-//      println("chunk: "+currentStart+" -> "+currentEnd)
+      println("chunk: "+currentStart+" -> "+currentEnd)
       currentStart = nextStr(currentEnd,1)
 
 
@@ -132,6 +132,12 @@ object HttpServer {
               val j = Job(currentId, "A", "99999999", hash)
 
               println("Job Created")
+              val thread = new Thread{
+                override def run: Unit = {
+                  splitAndQueue(j)
+                }
+              }
+              thread.start()
 //              splitAndQueue(j)
               j :: jobs
 

@@ -15,6 +15,8 @@ import scala.io.StdIn
 
 object JobFetcher {
 
+  // get job from queue and spawn working instance
+
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
@@ -41,6 +43,8 @@ object JobFetcher {
     new Worker(startString, endString, hash)
 
     status = "DONE"
+
+    // When worker is done
     postStatus()
 
   }
@@ -84,12 +88,16 @@ object JobFetcher {
     //    getJobfromQueue()
 
     val route: Route =
+
+    // WHEN SERVER PINGS
       get {
         pathPrefix("ping") {
           // returning status
           complete(status)
         }
       }
+    // TODO: POST REQUEST from SERVER when this job IS DONE
+
 
     val bindingFuture = Http().bindAndHandle(route,"0.0.0.0", 8084)
     println(s"Worker online at http://0.0.0.0:8082/\nPress RETURN to stop...")

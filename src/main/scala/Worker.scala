@@ -9,9 +9,6 @@ class Worker(startRange: String, endRange: String, hash:String) {
 
   // TODO: POST REQUEST THE FIRST TIME
 
-  // TODO: POST REQUEST WHEN SERVER PINGS
-
-  // TODO: POST REQUEST WHEN SERVER IS DONE
 
 
 
