@@ -57,7 +57,7 @@ object ParallelCracker {
   }
 
   def checkHashed(s: String, hash: String) = {
-    println(s)
+//    println(s)
 
     if (getHashed(s).equals(hash)){
       found = s

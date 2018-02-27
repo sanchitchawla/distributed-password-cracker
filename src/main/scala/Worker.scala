@@ -11,5 +11,4 @@ class Worker(startRange: String, endRange: String, hash:String) {
 
 
 
-
 }

@@ -9,7 +9,7 @@ public class NewTask {
 
     public static void main(String[] argv) throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
+        factory.setHost("172.17.0.2");
         factory.setPort(5672);
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
@@ -21,6 +21,7 @@ public class NewTask {
         channel.basicPublish("", TASK_QUEUE_NAME,
                 MessageProperties.PERSISTENT_TEXT_PLAIN,
                 message.getBytes("UTF-8"));
+
         System.out.println(" [x] Sent '" + message + "'");
 
         channel.close();
@@ -29,7 +30,7 @@ public class NewTask {
 
     private static String getMessage(String[] strings) {
         if (strings.length < 1)
-            return "Hello World!";
+            return "A" + "," + "AA" + "," + "icidih";
         return joinStrings(strings, " ");
     }
 
