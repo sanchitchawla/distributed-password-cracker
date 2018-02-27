@@ -23,3 +23,5 @@ libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.0-R
 
 libraryDependencies += "io.relayr" % "rabbitmq-scala-client_2.11" % "0.1.8"
 //>>>>>>> e378626383d4ee7a9f30488c23aedf71450f3a2c
+
+libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.0"

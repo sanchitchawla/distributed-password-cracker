@@ -1,22 +1,20 @@
-import io.relayr.amqp._
-import scala.concurrent.duration._
 
-object RabbitMQ extends App{
+import com.rabbitmq.client.{Channel, Connection, ConnectionFactory}
 
-  val connection = ConnectionHolder.builder("amqps://guest:password@host:port")
-    .reconnectionStrategy(ReconnectionStrategy.JavaClientFixedReconnectDelay(1 seconds))
-    .build()
+import scala.util.Try
+object RabbitMQ extends App {
 
-  val channel = connection.newChannel()
+  def rabbitIsRunning(host: String = "172.17.0.2", port: Int = 5672): Boolean =
+    Try {
+      val factory: ConnectionFactory = new ConnectionFactory
+      factory.setHost(host)
+      factory.setPort(port)
+      val conn: Connection           = factory.newConnection
+      val channel: Channel           = conn.createChannel
+      channel.close()
+      conn.close()
+    }.isSuccess
 
-  def consumer(request: Message): Unit = request match {
-    case Message.String(string) => println(string)
-      // Do job
-      // Create new Worker(startRange, endRange, hash)
-  }
-  val queue = QueueDeclare(Some("workqueue"))
-  channel.addConsumer(queue, consumer)
-
-//  channel.send(Exchange.Default.route("queue.name"), Message.String("message"))
-
+  println(rabbitIsRunning())
+  println("ehuheueh")
 }

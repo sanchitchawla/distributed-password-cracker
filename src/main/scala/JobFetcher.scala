@@ -96,7 +96,7 @@ object JobFetcher {
           complete(status)
         }
       }
-    // TODO: POST REQUEST from SERVER when this job IS DONE
+    // TODO: POST REQUEST from SERVER when this job IS DONE AND SEND STATUS BACK
 
 
     val bindingFuture = Http().bindAndHandle(route,"0.0.0.0", 8084)
