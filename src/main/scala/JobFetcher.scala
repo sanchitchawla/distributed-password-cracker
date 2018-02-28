@@ -29,6 +29,7 @@ object JobFetcher {
   def  getJobfromQueue():Unit = {
 
     // TODO: get a job from Queue
+    
 
     val job = Job(1, "BA", "CA", "wertgv34")
     status = "NOT_DONE"
