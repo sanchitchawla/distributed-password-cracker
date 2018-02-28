@@ -1,5 +1,4 @@
 import com.rabbitmq.client.*;
-import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -52,10 +51,6 @@ public class WorkerJava {
     }
 
     private static void doWork(Job job) {
-        // Check redis if job is done
-        Jedis jedis = new Jedis("172.17.0.2");
-        jedis.set("1", "Not Done");
-//        System.out.println(jedis.get("1"));
         String startRange = job.getStartString();
         String endRange = job.getEndString();
         String hash = job.getHash();

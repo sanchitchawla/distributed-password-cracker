@@ -26,25 +26,29 @@ object JobFetcher {
 
   var status = "NOT_DONE"
 
+  val redis: Redis = new Redis()
+
+  val worker: WorkerJava = new WorkerJava()
+
   def  getJobfromQueue():Unit = {
 
     // TODO: get a job from Queue
-    
+
 
     val job = Job(1, "BA", "CA", "wertgv34")
     status = "NOT_DONE"
 
-    // TODO: check whether that jobId is done (from redis)
+    if (redis.isDone(job.getJobId)) {
+      // TODO: Do something when Job is done
+    }
 
     // if not done
     val startString = job.getStartString
     val endString = job.getEndString
     val hash = job.getHash
 
-    new Worker(startString, endString, hash)
-
+//    new Worker(startString, endString, hash)
     status = "DONE"
-
     // When worker is done
     postStatus()
 
