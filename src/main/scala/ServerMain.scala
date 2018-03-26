@@ -80,7 +80,7 @@ object ServerMain{
       if(toLong(currentEnd)>toLong(end)) currentEnd = end
 
       println(currentStart,currentEnd)
-      // add to queue
+      // TODO: add to queue
       currentStart = nextN(currentEnd,1)
     }
 
@@ -148,8 +148,10 @@ object ServerMain{
 
     //      val server = new Server("local")
     //      println(server.receive())
-    splitAndQueue("A", "BB")
-
+//    splitAndQueue("A", "BB")
+    val w = "isFound,true,result, "
+    val sw: Array[String] = w.split(",")
+    println(sw(0),sw(1),sw(2),sw(3))
     //    println(toLong("A"))
     //    println(toLong("AA"))
     //    println(findSize("A","AD"))

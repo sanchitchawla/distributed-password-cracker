@@ -1,18 +1,36 @@
+import com.google.gson.Gson;
 import com.rabbitmq.client.*;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
+
 import java.util.concurrent.TimeoutException;
+
+
+
 
 public class WorkerJava {
 
-    private static final String TASK_QUEUE_NAME = "task_queue";
-    private static ConnectionFactory factory;
-    private static Connection connection;
-    private static Channel channel;
+    private final String TASK_QUEUE_NAME = "task_queue";
+    private ConnectionFactory factory;
+    private Connection connection;
+    private Channel channel;
+
+    HttpClient httpclient = HttpClients.createDefault();
+
+
 
     public WorkerJava() throws IOException, TimeoutException {
         factory = new ConnectionFactory();
-        factory.setHost("172.17.0.3");
+        factory.setHost("127.0.0.1");
         connection = factory.newConnection();
         channel = connection.createChannel();
 
@@ -22,7 +40,9 @@ public class WorkerJava {
         channel.basicQos(1);
     }
 
-    public static void listen() throws IOException {
+    public void listen() throws IOException {
+
+
 
         final Consumer consumer = new DefaultConsumer(channel) {
             @Override
@@ -50,13 +70,50 @@ public class WorkerJava {
         channel.basicConsume(TASK_QUEUE_NAME, autoAck, consumer);
     }
 
-    private static void doWork(Job job) {
+    public void doWork(Job job) {
         String startRange = job.getStartString();
         String endRange = job.getEndString();
         String hash = job.getHash();
+        int id = job.getJobId();
 
         System.out.println("Cracking");
-        ParallelCracker.cracker(startRange, endRange, hash);
+        ParallelCracker parallelCracker = new ParallelCracker();
+        boolean isFound = parallelCracker.cracker(startRange, endRange, hash);
+        String pass;
+        if(isFound){
+            pass = parallelCracker.getResult();
+
+        }
+        else{
+            pass = " ";
+        }
+
+
+        String s = String.valueOf(isFound);
+        String t = pass;
+        String jsonString = new Gson().toJson(id+","+s+","+t);
+        System.out.println(jsonString);
+        HttpPost httppost = new HttpPost("http://0.0.0.0:8082/status");
+        httppost.setHeader("Content-type", "application/json");
+        try{
+            httppost.setEntity(new StringEntity(jsonString));
+            httpclient.execute(httppost);
+        }
+        catch (Exception e){
+            System.out.println("error: "+e);
+        }
 
     }
+
+    public void temp(){
+        System.out.println("Temporary printing");
+        try{Thread.sleep(2000);}
+        catch (Exception e){
+            System.out.println(e);
+        }
+        System.out.println("Done printing");
+//        return true;
+    }
+
+
 }

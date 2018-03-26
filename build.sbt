@@ -25,3 +25,6 @@ libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.0"
 
 // https://mvnrepository.com/artifact/redis.clients/jedis
 libraryDependencies += "redis.clients" % "jedis" % "2.9.0"
+
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
+libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.6.2" % Test

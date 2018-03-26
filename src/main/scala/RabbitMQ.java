@@ -13,9 +13,10 @@ public class RabbitMQ {
     private static Connection connection;
     private static Channel channel;
 
+
     public RabbitMQ() throws IOException, TimeoutException {
         factory = new ConnectionFactory();
-        factory.setHost("172.17.0.3");
+        factory.setHost("127.0.0.1");
         factory.setPort(5672);
         connection = factory.newConnection();
         channel = connection.createChannel();
@@ -23,7 +24,7 @@ public class RabbitMQ {
         channel.queueDeclare(TASK_QUEUE_NAME, true, false, false, null);
     }
 
-    public static void addJob(Job job) throws IOException, TimeoutException {
+    public void addJob(Job job) throws IOException, TimeoutException {
 
         channel.basicPublish("", TASK_QUEUE_NAME,
                 MessageProperties.PERSISTENT_TEXT_PLAIN,
@@ -31,16 +32,17 @@ public class RabbitMQ {
 
         System.out.println(" [x] Sent '" + job.getHash() + "'");
 
-        channel.close();
-        connection.close();
+//        channel.close();
+//        connection.close();
     }
 
-    public static void main(String[] args) throws IOException, TimeoutException {
-        RabbitMQ rabbitMQ = new RabbitMQ();
-        addJob(new Job(1, "A", "AAA", "ic39fhj"));
-
-        WorkerJava workerJava = new WorkerJava();
-        workerJava.listen();
-    }
+//    public static void main(String[] args) throws IOException, TimeoutException {
+//        RabbitMQ rabbitMQ = new RabbitMQ();
+//        addJob(new Job(1, "A", "AAA", "ic39fhj"));
+//        addJob(new Job(2, "A", "AAA", "ic4wq4tfttzU2"));
+//
+////        WorkerJava workerJava = new WorkerJava();
+////        workerJava.listen();
+//    }
 
 }

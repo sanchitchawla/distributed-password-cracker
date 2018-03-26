@@ -4,14 +4,24 @@ import akka.stream.ActorMaterializer
 import akka.Done
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 import java.util.concurrent.atomic.AtomicInteger
 
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
+import com.google.gson.Gson
+import com.redis.RedisClient
+import org.apache.http.client.HttpClient
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.HttpClients
+
 import scala.collection.mutable.HashMap
 import scala.io.StdIn
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.parsing.json.JSONObject
 
 object HttpServer {
   // needed to run the route
@@ -30,8 +40,14 @@ object HttpServer {
   implicit val jobFormat = jsonFormat4(Job)
   implicit val dispatchedJobFormat = jsonFormat1(dispatchedJob)
 
-  var jobIdToSize = new HashMap[AtomicInteger,Long]()
-  var jobIdToIp = new HashMap[AtomicInteger,String]()
+  var jobIdToSize = new HashMap[Int,Long]()
+  var jobIdToIp = new HashMap[Int,String]()
+
+  val CHUNK_SIZE = 125
+
+  var rabbitMQ = new RabbitMQ
+
+//  val r = new RedisClient("localhost", 6379)
 
 
   val char_array: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
@@ -94,21 +110,25 @@ object HttpServer {
     var start = job.getStartString
     var end = job.getEndString
     var jobId = job.getJobId
+    var hash = job.getHash
 
     var currentEnd = start
     var currentStart = start
     while (toLong(currentEnd) < toLong(end)){
       currentEnd = currentStart
       currentEnd = nextStr(currentEnd,2)
+      currentEnd = nextStr(currentEnd,2)
 
       if(toLong(currentEnd)>toLong(end)) currentEnd = end
 
       println("chunk: "+currentStart+" -> "+currentEnd)
+      //      add to queue
+      rabbitMQ.addJob(new Job(jobId, currentStart, currentEnd, hash))
+
       currentStart = nextStr(currentEnd,1)
 
 
 
-//      add to queue
 
 
     }
@@ -125,20 +145,20 @@ object HttpServer {
   def saveJob(job: dispatchedJob): Future[Done] = {
     jobs = job match {
             case dispatchedJob(hash) => {
-              val currentId = jobId.getAndIncrement()
-              val totalSize = findSize("A","99999999")
-              jobIdToSize += (jobId -> totalSize)
+              var currentId = jobId.getAndIncrement()
+              currentId = currentId.intValue()
+              val totalSize = findSize("A","AAA")
+              jobIdToSize += (currentId -> totalSize)
+              println(jobIdToSize)
+              val j = Job(currentId, "A", "AAA", hash)
 
-              val j = Job(currentId, "A", "99999999", hash)
-
-              println("Job Created")
+              println("Job Created: "+currentId)
               val thread = new Thread{
                 override def run: Unit = {
                   splitAndQueue(j)
                 }
               }
               thread.start()
-//              splitAndQueue(j)
               j :: jobs
 
             }
@@ -166,13 +186,55 @@ object HttpServer {
           path("createJob") {
             entity(as[dispatchedJob]) { job =>
 
+              // TODO: Save Client ip to job id to ip
+              var rip = "111"
+              extractClientIP{ip=>
+                rip = ip.toString()
+                println("HELLOOOO")
+              complete("done")
+              }
+              extractClientIP
+              println("IP: "+ rip)
+
               val saved: Future[Done] = saveJob(job)
               onComplete(saved) { done =>
                 complete("Job created")
               }
             }
           }
+        } ~
+        post {
+          path("status"){
+            println(requestEntityPresent)
+            entity(as[String]) { entity =>
+              println("---------")
+              val content = entity.substring(1,entity.length()-1)
+              val resultArray = content.split(",")
+              val id = resultArray(0).toInt
+              val isFound = resultArray(1)
+              val rs = resultArray(2)
+              jobIdToSize(id) -= CHUNK_SIZE
+              println(jobIdToSize(id))
+
+              if(isFound == "true"){
+
+                // TODO: send to client
+//                val clientIp = jobIdToIp(id)
+//                 val post = new HttpPost(clientIp + "/answer")
+//                post.setHeader("Content-type", "application/json")
+//                val jsonString = new Gson().toJson(rs)
+//                post.setEntity(new StringEntity(jsonString))
+
+              }
+
+              complete("")
+           }
+          }
+
         }
+
+
+
 
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8082)
     println(s"Server online at http://0.0.0.0:8082/\nPress RETURN to stop...")

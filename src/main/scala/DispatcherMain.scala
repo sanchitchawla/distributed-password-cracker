@@ -4,10 +4,10 @@ import scala.concurrent.duration._
   */
 object DispatcherMain  extends App{
 
-  val receiver = "http://192.168.1.242:8082/createJob"
+  val receiver = "http://0.0.0.0:8082/createJob"
   val startRange = "AA"
   val endRange = "9999A"
-  val hash = "icMez.omxHuqU"
+  val hash = "ic4wq4tfttzU2"
 
   val dispatcher: Dispatcher = new Dispatcher(receiver,hash)
 

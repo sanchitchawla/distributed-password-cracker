@@ -9,8 +9,9 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.HttpClientBuilder
 
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.StdIn
+import scala.util.{Failure, Success}
 
 
 object JobFetcher {
@@ -26,33 +27,8 @@ object JobFetcher {
 
   var status = "NOT_DONE"
 
-  val redis: Redis = new Redis()
+//  val redis: Redis = new Redis()
 
-  val worker: WorkerJava = new WorkerJava()
-
-  def  getJobfromQueue():Unit = {
-
-    // TODO: get a job from Queue
-
-
-    val job = Job(1, "BA", "CA", "wertgv34")
-    status = "NOT_DONE"
-
-    if (redis.isDone(job.getJobId)) {
-      // TODO: Do something when Job is done
-    }
-
-    // if not done
-    val startString = job.getStartString
-    val endString = job.getEndString
-    val hash = job.getHash
-
-//    new Worker(startString, endString, hash)
-    status = "DONE"
-    // When worker is done
-    postStatus()
-
-  }
 
   def postStatus(): Unit ={
 
@@ -89,26 +65,29 @@ object JobFetcher {
   def main(args: Array[String]): Unit = {
 
 
-//        postStatus()
-    //    getJobfromQueue()
-
     val route: Route =
 
     // WHEN SERVER PINGS
       get {
         pathPrefix("ping") {
           // returning status
+
           complete(status)
         }
       }
-    // TODO: POST REQUEST from SERVER when this job IS DONE AND SEND STATUS BACK
 
 
     val bindingFuture = Http().bindAndHandle(route,"0.0.0.0", 8084)
-    println(s"Worker online at http://0.0.0.0:8082/\nPress RETURN to stop...")
+    println(s"Worker online at http://0.0.0.0:8084/\nPress RETURN to stop...")
+
+    val w = new WorkerJava()
+    w.listen()
+
     StdIn.readLine() // let it run until user presses return
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
       .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+
+
   }
 }

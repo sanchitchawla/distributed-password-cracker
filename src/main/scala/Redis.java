@@ -14,4 +14,12 @@ public class Redis {
         return this.jedis.get(id.toString()).equals("DONE");
     }
 
+
+    public static void main(String[] args) {
+        Redis r = new Redis();
+        r.jedis.append("1","BODAS");
+
+        System.out.println(r.isDone(1));
+    }
+
 }

@@ -5,11 +5,9 @@ import scala.collection.parallel.immutable.ParVector
 import scala.collection.parallel.mutable.ParArray
 
 
-/**
-  * Created by sanch on 23-Jan-18.
-  */
 
-object ParallelCracker {
+
+class ParallelCracker {
 
   var found = ""
 
@@ -51,17 +49,20 @@ object ParallelCracker {
       currentString = getNext(currentString)
 
     }
-    lst
+    lst.toVector
 
 
   }
 
-  def checkHashed(s: String, hash: String) = {
+  def checkHashed(s: Vector[String], hash: String) = {
 //    println(s)
+    s.iterator.takeWhile(_ => found=="").foreach(i => {
+      if (getHashed(i).equals(hash)) {
+        found = i
+      }
+//      println(i,found)
+    })
 
-    if (getHashed(s).equals(hash)){
-      found = s
-    }
     found!=""
 
   }
@@ -70,11 +71,13 @@ object ParallelCracker {
 
     val passwordList = createList(startRange,endRange)
 
-    println(passwordList.size)
+    val chunkSize = math.ceil(passwordList.size/4.0).toInt
 
-    passwordList.foreach{ e => checkHashed(e,hash)}
-    passwordList.exists(checkHashed(_,hash))
-    Vector(1,2,3,5,2,62,6,16,1).grouped(4)
+    val chunkedList = passwordList.grouped(chunkSize).toParArray
+
+    chunkedList.foreach{ e => checkHashed(e,hash)}
+//    passwordList.exists(checkHashed(_,hash))
+//    Vector(1,2,3,5,2,62,6,16,1).grouped(2)
 
     // foreach spawn thread for each element
     // Grouped to chunk then parallel for for each chunk, each chunk do sequentially
@@ -115,8 +118,12 @@ object ParallelCracker {
 
   def main(args: Array[String]): Unit = {
 
-    val hash = "ic/VuctZ70TSU"
-    print(cracker("A","AA",hash))
+    val hash = getHashed("BAB")
+
+    println(cracker("A","BAA",hash))
+    println(found)
   }
+
+  def getResult: String = found
 
 }
