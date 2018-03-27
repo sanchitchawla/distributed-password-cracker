@@ -6,7 +6,7 @@ public class Redis {
 
     public Redis(){
 
-        this.jedis= new Jedis("172.17.0.2");
+        this.jedis= new Jedis("0.0.0.0");
     }
 
     public boolean isDone(Integer id){

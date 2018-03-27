@@ -16,7 +16,7 @@ import com.redis.RedisClient
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.client.{HttpClientBuilder, HttpClients}
 
 import scala.collection.mutable.HashMap
 import scala.io.StdIn
@@ -26,6 +26,9 @@ import scala.util.parsing.json.JSONObject
 object HttpServer {
   // needed to run the route
   implicit val system = ActorSystem()
+
+  println(s"remote-addr-hdr: ${system.settings.config.getString("akka.http.server.remote-address-header")}")
+
   implicit val materializer = ActorMaterializer()
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
@@ -42,6 +45,7 @@ object HttpServer {
 
   var jobIdToSize = new HashMap[Int,Long]()
   var jobIdToIp = new HashMap[Int,String]()
+  var jobIdToResult = new HashMap[Int,String]()
 
   val CHUNK_SIZE = 125
 
@@ -136,20 +140,20 @@ object HttpServer {
   }
 
   // (fake) async database query api
-  def fetchItem(jobId: Long): Future[Option[Job]] = Future {
-    jobs.find(o => o.getJobId == jobId)
-  }
+//  def fetchItem(jobId: Long): Future[Option[Job]] = Future {
+//    jobs.find(o => o.getJobId == jobId)
+//  }
 
 
 
-  def saveJob(job: dispatchedJob): Future[Done] = {
+  def saveJob(job: dispatchedJob, ip: String, currentId: Int): Future[Done] = {
     jobs = job match {
             case dispatchedJob(hash) => {
-              var currentId = jobId.getAndIncrement()
-              currentId = currentId.intValue()
               val totalSize = findSize("A","AAA")
               jobIdToSize += (currentId -> totalSize)
+              jobIdToIp += (currentId -> ip)
               println(jobIdToSize)
+              println(jobIdToIp)
               val j = Job(currentId, "A", "AAA", hash)
 
               println("Job Created: "+currentId)
@@ -172,40 +176,42 @@ object HttpServer {
 
     val route: Route =
       get {
-        pathPrefix("getJob" / LongNumber) { id =>
+        pathPrefix("getJob" / IntNumber) { id =>
           // there might be no item for a given id
-          val maybeJob: Future[Option[Job]] = fetchItem(id)
-
-          onSuccess(maybeJob) {
-            case Some(job) => complete(job)
-            case None       => complete(StatusCodes.NotFound)
+          val rs = jobIdToResult(id)
+          if(rs == ""){
+            complete("running")
+          }
+          else {
+            complete(rs)
           }
         }
       } ~
         post {
           path("createJob") {
-            entity(as[dispatchedJob]) { job =>
+            extractClientIP {clientIp =>
+              entity(as[dispatchedJob]) { job =>
 
-              // TODO: Save Client ip to job id to ip
-              var rip = "111"
-              extractClientIP{ip=>
-                rip = ip.toString()
-                println("HELLOOOO")
-              complete("done")
-              }
-              extractClientIP
-              println("IP: "+ rip)
+                // TODO: Save Client ip to job id to ip
 
-              val saved: Future[Done] = saveJob(job)
-              onComplete(saved) { done =>
-                complete("Job created")
-              }
+                val incomingIp = clientIp.toOption.map(_.getHostAddress).getOrElse("unknown")
+
+                println("IP: " + incomingIp)
+                println("Job: " + job)
+
+                var currentJobId = jobId.getAndIncrement().toInt
+
+
+                val saved: Future[Done] = saveJob(job,incomingIp,currentJobId)
+                onComplete(saved) { done =>
+                  complete(currentJobId.toString)
+                }
             }
+          }
           }
         } ~
         post {
           path("status"){
-            println(requestEntityPresent)
             entity(as[String]) { entity =>
               println("---------")
               val content = entity.substring(1,entity.length()-1)
@@ -214,16 +220,22 @@ object HttpServer {
               val isFound = resultArray(1)
               val rs = resultArray(2)
               jobIdToSize(id) -= CHUNK_SIZE
-              println(jobIdToSize(id))
+              println(jobIdToSize(id),isFound)
 
               if(isFound == "true"){
 
                 // TODO: send to client
-//                val clientIp = jobIdToIp(id)
-//                 val post = new HttpPost(clientIp + "/answer")
-//                post.setHeader("Content-type", "application/json")
-//                val jsonString = new Gson().toJson(rs)
-//                post.setEntity(new StringEntity(jsonString))
+                println("Prepared send result: "+rs)
+                val clientIp = jobIdToIp(id)
+                println(clientIp)
+
+                val post = new HttpPost("http://"+"0.0.0.0" + ":8085/receive")
+                println(post)
+                post.setHeader("Content-type", "application/json")
+                val jsonString = new Gson().toJson(rs)
+                post.setEntity(new StringEntity(jsonString))
+
+                val response = HttpClientBuilder.create().build().execute(post)
 
               }
 

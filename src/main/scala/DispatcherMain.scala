@@ -14,11 +14,18 @@ object DispatcherMain  extends App{
   dispatcher.send()
   println("Sent")
 
+  dispatcher.serv()
+
+
+
   // Should auto ping every 5 seconds
   var deadline = 5.seconds.fromNow
   while(deadline.isOverdue()) {
     dispatcher.ping()
     deadline = 5.seconds.fromNow
   }
+
+
+
 
 }
