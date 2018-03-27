@@ -78,7 +78,7 @@ object JobFetcher {
 
 
     val bindingFuture = Http().bindAndHandle(route,"0.0.0.0", 8084)
-    println(s"Worker online at http://0.0.0.0:8084/\nPress RETURN to stop...")
+    println(s"Worker server online at http://0.0.0.0:8084/\nPress RETURN to stop...")
 
     val w = new WorkerJava()
     w.listen()

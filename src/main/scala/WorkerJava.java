@@ -9,6 +9,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 
@@ -18,6 +19,10 @@ import java.util.concurrent.TimeoutException;
 
 
 public class WorkerJava {
+
+    private String HOST_NAME = "0.0.0.0";
+
+    private Jedis redis = new Jedis(HOST_NAME);
 
     private final String TASK_QUEUE_NAME = "task_queue";
     private ConnectionFactory factory;
@@ -74,7 +79,9 @@ public class WorkerJava {
         String startRange = job.getStartString();
         String endRange = job.getEndString();
         String hash = job.getHash();
-        int id = job.getJobId();
+        Integer id = job.getJobId();
+        System.out.println("Redis status: "+ redis.get(id.toString()));
+        if(redis.get(id.toString()).equals("DONE")) return;
 
         System.out.println("Cracking");
         ParallelCracker parallelCracker = new ParallelCracker();
@@ -82,6 +89,7 @@ public class WorkerJava {
         String pass;
         if(isFound){
             pass = parallelCracker.getResult();
+            redis.set(id.toString(),"DONE");
 
         }
         else{
@@ -103,16 +111,6 @@ public class WorkerJava {
             System.out.println("error: "+e);
         }
 
-    }
-
-    public void temp(){
-        System.out.println("Temporary printing");
-        try{Thread.sleep(2000);}
-        catch (Exception e){
-            System.out.println(e);
-        }
-        System.out.println("Done printing");
-//        return true;
     }
 
 

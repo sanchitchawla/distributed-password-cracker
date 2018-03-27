@@ -17,6 +17,7 @@ import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{HttpClientBuilder, HttpClients}
+import redis.clients.jedis.Jedis
 
 import scala.collection.mutable.HashMap
 import scala.io.StdIn
@@ -48,8 +49,11 @@ object HttpServer {
   var jobIdToResult = new HashMap[Int,String]()
 
   val CHUNK_SIZE = 125
+  val REDIS_HOST = "0.0.0.0"
 
   var rabbitMQ = new RabbitMQ
+
+  var redis = new Jedis(REDIS_HOST)
 
 //  val r = new RedisClient("localhost", 6379)
 
@@ -146,6 +150,8 @@ object HttpServer {
 
 
 
+
+
   def saveJob(job: dispatchedJob, ip: String, currentId: Int): Future[Done] = {
     jobs = job match {
             case dispatchedJob(hash) => {
@@ -155,6 +161,8 @@ object HttpServer {
               println(jobIdToSize)
               println(jobIdToIp)
               val j = Job(currentId, "A", "AAA", hash)
+
+              redis.set(currentId.toString,"NOT_DONE")
 
               println("Job Created: "+currentId)
               val thread = new Thread{
@@ -224,19 +232,24 @@ object HttpServer {
 
               if(isFound == "true"){
 
+//                set chunk remaining to zero
+                jobIdToSize(id) = 0
+                println("Job size: "+jobIdToSize(id))
+
+                Thread.sleep(5000)
                 // TODO: send to client
                 println("Prepared send result: "+rs)
                 val clientIp = jobIdToIp(id)
                 println(clientIp)
 
-                val post = new HttpPost("http://"+"0.0.0.0" + ":8085/receive")
+                val post = new HttpPost("http://"+"0.0.0.0" + ":8091/receive")
                 println(post)
                 post.setHeader("Content-type", "application/json")
                 val jsonString = new Gson().toJson(rs)
+
                 post.setEntity(new StringEntity(jsonString))
-
-                val response = HttpClientBuilder.create().build().execute(post)
-
+                val httpclient = HttpClients.createDefault
+                httpclient.execute(post)
               }
 
               complete("")
