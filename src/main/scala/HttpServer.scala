@@ -11,6 +11,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
+import ServerMain.{Status, workerToJob}
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import com.google.gson.Gson
@@ -21,12 +22,13 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{HttpClientBuilder, HttpClients}
 import redis.clients.jedis.Jedis
 
+import scala.collection.Set
 import scala.collection.mutable.HashMap
 import scala.io.StdIn
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.parsing.json.JSONObject
 
-object HttpServer {
+class HttpServer {
   // needed to run the route
   implicit val system = ActorSystem()
 
@@ -40,7 +42,9 @@ object HttpServer {
 
   var isBusy = new AtomicBoolean(false)
 
-  var workerToJob = new HashMap[String,Job]()
+//  var workerToJob = new HashMap[String,Job]()
+
+  var workerSet: Set[String] = Set()
   var jobs: List[Job] = List()
 
   final case class dispatchedJob(hash: String)
@@ -191,7 +195,32 @@ object HttpServer {
     Future { Done }
   }
 
-  def main(args: Array[String]) {
+  def shutdownWorkers(): Unit = {
+
+    val allWorkers: Set[String] = workerSet
+
+    println("Worker Set   " + allWorkers)
+
+    for (eachWorker <- allWorkers) sendSignaltoWorker(eachWorker)
+  }
+
+  def sendSignaltoWorker(receiver: String): Unit ={
+
+    val json = new Status("stop")
+    val Json = new Gson().toJson(json)
+
+    println(Json)
+    val post = new HttpPost("http://"+receiver + ":8084"+"/stop")
+
+    post.setHeader("Content-type", "application/json")
+    post.setEntity(new StringEntity(Json))
+
+    val response = HttpClientBuilder.create().build().execute(post)
+
+
+  }
+
+  def run(args: Array[String]) {
 
     RABBIT_HOST = args(0)
 
@@ -219,7 +248,6 @@ object HttpServer {
             extractClientIP {clientIp =>
               entity(as[dispatchedJob]) { job =>
 
-                // TODO: Save Client ip to job id to ip
 
                 val incomingIp = clientIp.toOption.map(_.getHostAddress).getOrElse("unknown")
 
@@ -238,79 +266,88 @@ object HttpServer {
           }
         } ~
         post {
-          path("status"){
-            entity(as[String]) { entity =>
-//              println("---------")
-              val content = entity.substring(1,entity.length()-1)
-              val resultArray = content.split(",")
-              val id = resultArray(0).toInt
-              val isFound = resultArray(1)
-              var rs = resultArray(2)
-              jobIdToSize(id) -= CHUNK_SIZE
-//              println(jobIdToSize(id),isFound)
+          path("status") {
+            extractClientIP { clientIp => {
 
-              if(isFound == "true"){
-                  println(id,rs)
-//                set chunk remaining to zero
+              entity(as[String]) { entity =>
+                //              println("---------")
+                val content = entity.substring(1, entity.length() - 1)
+                val resultArray = content.split(",")
+                val id = resultArray(0).toInt
+                val isFound = resultArray(1)
+                var rs = resultArray(2)
+                jobIdToSize(id) -= CHUNK_SIZE
+                //              println(jobIdToSize(id),isFound)
 
-                jobIdToSize(id) = 0
-                println("Job size: "+jobIdToSize(id))
-                needToStop.set(true)
-                println("Interupt+++++++++")
-//                Thread.sleep(5000)
+                // Saving worker IPs
+                val incomingIp = clientIp.toOption.map(_.getHostAddress).getOrElse("unknown")
 
-                rabbitMQ.clearQueue()
-                println(conQ.size())
-                needToStop.set(false)
-                if(!conQ.isEmpty){
-                  val newJ = conQ.poll()
-                  val thread = new Thread {
-                    override def run: Unit = {
-                      splitAndQueue(newJ)
+                workerSet += incomingIp
+
+                if (isFound == "true") {
+                  println(id, rs)
+                  //                set chunk remaining to zero
+
+                  jobIdToSize(id) = 0
+                  println("Job size: " + jobIdToSize(id))
+
+                  // TODO: send to client
+                  println("Prepared send result: " + rs)
+                  val clientIp = jobIdToIp(id)
+                  println(clientIp)
+
+                  val post = new HttpPost("http://" + clientIp + ":8091/receive")
+                  println(post)
+                  post.setHeader("Content-type", "application/json")
+                  val jsonString = new Gson().toJson(rs)
+
+                  post.setEntity(new StringEntity(jsonString))
+                  val httpclient = HttpClients.createDefault
+                  httpclient.execute(post)
+                  needToStop.set(true)
+                  println("Interupt+++++++++")
+                  //                Thread.sleep(5000)
+
+                  rabbitMQ.clearQueue()
+                  println(conQ.size())
+                  needToStop.set(false)
+                  if (!conQ.isEmpty) {
+                    val newJ = conQ.poll()
+                    val thread = new Thread {
+                      override def run: Unit = {
+                        splitAndQueue(newJ)
+                      }
                     }
+                    thread.start()
                   }
-                  thread.start()
+                  else {
+                    isBusy.set(false)
+                  }
+
                 }
-                else{
-                  isBusy.set(false)
+                else if (jobIdToSize(id) <= 0) {
+                  rs = "404 password not found"
+                  val clientIp = jobIdToIp(id)
+                  println(clientIp)
+
+                  val post = new HttpPost("http://" + clientIp + ":8091/receive")
+                  println(post)
+                  post.setHeader("Content-type", "application/json")
+                  val jsonString = new Gson().toJson(rs)
+
+                  post.setEntity(new StringEntity(jsonString))
+                  val httpclient = HttpClients.createDefault
+                  httpclient.execute(post)
                 }
 
-                // TODO: send to client
-                println("Prepared send result: "+rs)
-                val clientIp = jobIdToIp(id)
-                println(clientIp)
 
-                val post = new HttpPost("http://"+clientIp + ":8091/receive")
-                println(post)
-                post.setHeader("Content-type", "application/json")
-                val jsonString = new Gson().toJson(rs)
-
-                post.setEntity(new StringEntity(jsonString))
-                val httpclient = HttpClients.createDefault
-                httpclient.execute(post)
+                complete("")
               }
-              else if(jobIdToSize(id) <= 0){
-                rs = "404 password not found"
-                val clientIp = jobIdToIp(id)
-                println(clientIp)
+            }
 
-                val post = new HttpPost("http://"+clientIp + ":8091/receive")
-                println(post)
-                post.setHeader("Content-type", "application/json")
-                val jsonString = new Gson().toJson(rs)
-
-                post.setEntity(new StringEntity(jsonString))
-                val httpclient = HttpClients.createDefault
-                httpclient.execute(post)
-              }
-
-              complete("")
-           }
+            }
           }
-
         }
-
-
 
 
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8082)
@@ -321,7 +358,7 @@ object HttpServer {
       .onComplete(_ ⇒ system.terminate()) // and shutdown when done
     sys.addShutdownHook({
       println("Shutting down workers ")
-      ServerMain.shutdownWorkers()
+      shutdownWorkers()
       println("All workers are safely shut")
     })
   }

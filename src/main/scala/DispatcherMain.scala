@@ -1,10 +1,10 @@
-import scala.concurrent.duration._
+
 /**
   * Created by sanch on 25-Jan-18.
   */
-object DispatcherMain {
+class DispatcherMain {
 
-  def main(args: Array[String]): Unit = {
+  def run(args: Array[String]): Unit = {
 
     val host = args(0)
 

@@ -81,8 +81,9 @@ public class WorkerJava {
         String endRange = job.getEndString();
         String hash = job.getHash();
         Integer id = job.getJobId();
-        System.out.println("Redis status: "+ redis.get(id.toString()));
-        if(redis.get(id.toString()).equals("DONE")) return;
+        String found = redis.get(id.toString());
+        System.out.println(found);
+        if(found.equals("DONE")) return;
 
         System.out.println("Cracking");
         ParallelCracker parallelCracker = new ParallelCracker();

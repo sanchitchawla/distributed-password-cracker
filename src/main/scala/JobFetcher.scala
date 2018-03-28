@@ -14,7 +14,7 @@ import scala.io.StdIn
 import scala.util.{Failure, Success}
 
 
-object JobFetcher {
+class JobFetcher {
 
   // get job from queue and spawn working instance
 
@@ -30,39 +30,37 @@ object JobFetcher {
 //  val redis: Redis = new Redis()
 
 
-  def postStatus(): Unit ={
-
-    val json = new StatusValue(status)
-    val Json = new Gson().toJson(json)
-
-    println(Json)
-
-    // create an HttpPost object
-    val post = new HttpPost(server)
-
-    // set the Content-type
-    post.setHeader("Content-type", "application/json")
-
-    // add the JSON as a StringEntity
-    post.setEntity(new StringEntity(Json))
-
-    // send the post request
-    val response = HttpClientBuilder.create().build().execute(post)
-
-    // print the response headers
-    println("--- HEADERS ---")
-    response.getAllHeaders.foreach(arg => println(arg))
-
-
-
-  }
+//  def postStatus(): Unit ={
+//
+//    val json = new StatusValue(status)
+//    val Json = new Gson().toJson(json)
+//
+//    println(Json)
+//
+//    // create an HttpPost object
+//    val post = new HttpPost(server)
+//
+//    // set the Content-type
+//    post.setHeader("Content-type", "application/json")
+//
+//    // add the JSON as a StringEntity
+//    post.setEntity(new StringEntity(Json))
+//
+//    // send the post request
+//    val response = HttpClientBuilder.create().build().execute(post)
+//
+//    // print the response headers
+//    println("--- HEADERS ---")
+//    response.getAllHeaders.foreach(arg => println(arg))
+//
+//  }
 
   class StatusValue(status: String){
     override def toString = "status, " + status
   }
 
 
-  def main(args: Array[String]): Unit = {
+  def run(args: Array[String]): Unit = {
     //    SERVER ADDRESS , RABBIT ADDRESS , REDIS ADDRESS
     val serverAddr = args(0)
     val rabbitAddr = args(1)
@@ -75,6 +73,11 @@ object JobFetcher {
           // returning status
 
           complete(status)
+        }~
+        post {
+          pathPrefix("stop"){
+            System.exit(0)
+          }
         }
       }
 

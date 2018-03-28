@@ -1,6 +1,7 @@
+
 object CrackerMain extends App{
 
-  val INPUTN = 6
+//  val INPUTN = 6
 
 // FOR SERVER:
   //  MODE , RABBIT ADDRESS , REDIS ADDRESS
@@ -21,8 +22,8 @@ object CrackerMain extends App{
         println("Insufficient Input")
       }
       else{
-        HttpServer.main(args.tail)
-
+        val server = new HttpServer()
+        server.run(args.tail)
       }
 
     }
@@ -31,7 +32,9 @@ object CrackerMain extends App{
         println("Insufficient Input")
       }
       else {
-        DispatcherMain.main(args.tail)
+//        DispatcherMain.main(args.tail)
+        val dispatcher = new DispatcherMain()
+        dispatcher.run(args.tail)
 
       }
 
@@ -41,8 +44,9 @@ object CrackerMain extends App{
         println("Insufficient Input")
       }
       else {
-        JobFetcher.main(args.tail)
-
+//        JobFetcher.main(args.tail)
+        val jobFetcher = new JobFetcher()
+        jobFetcher.run(args.tail)
       }
 
     }
