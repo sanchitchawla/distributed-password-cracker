@@ -11,10 +11,11 @@ object DispatcherMain  extends App{
 
   val dispatcher: Dispatcher = new Dispatcher(receiver,hash)
 
-  dispatcher.send()
+  dispatcher.serv()
+
+//  dispatcher.send()
   println("Sent")
 
-  dispatcher.serv()
 
 
 

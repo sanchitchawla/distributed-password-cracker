@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
@@ -38,7 +38,7 @@ object HttpServer {
 
   var jobId: AtomicInteger = new AtomicInteger(1)
 
-  var workedJob = new AtomicInteger(1)
+  var isBusy = new AtomicBoolean(false)
 
   var workerToJob = new HashMap[String,Job]()
   var jobs: List[Job] = List()
@@ -62,6 +62,7 @@ object HttpServer {
 
   val conQ = new ConcurrentLinkedQueue[Job]
 
+  val needToStop = new AtomicBoolean(false)
 
 
 
@@ -129,7 +130,7 @@ object HttpServer {
 
     var currentEnd = start
     var currentStart = start
-    while (toLong(currentEnd) < toLong(end)){
+    while (!needToStop.get() && (toLong(currentEnd) < toLong(end))){
       currentEnd = currentStart
       currentEnd = nextStr(currentEnd,2)
       currentEnd = nextStr(currentEnd,2)
@@ -172,12 +173,20 @@ object HttpServer {
               redis.set(currentId.toString,"NOT_DONE")
 
               println("Job Created: "+currentId)
-              val thread = new Thread{
-                override def run: Unit = {
-                  splitAndQueue(j)
+              conQ.add(j)
+              println(isBusy.get())
+              if(!isBusy.getAndSet(true)) {
+                val newJ = conQ.poll()
+                val thread = new Thread {
+                  override def run: Unit = {
+                    splitAndQueue(newJ)
+                  }
                 }
+                thread.start()
               }
-              thread.start()
+
+
+
               j :: jobs
 
             }
@@ -240,10 +249,29 @@ object HttpServer {
               if(isFound == "true"){
 
 //                set chunk remaining to zero
+
                 jobIdToSize(id) = 0
                 println("Job size: "+jobIdToSize(id))
+                needToStop.set(true)
+                println("Interupt+++++++++")
+//                Thread.sleep(5000)
 
-                Thread.sleep(5000)
+                rabbitMQ.clearQueue()
+                println(conQ.size())
+                needToStop.set(false)
+                if(!conQ.isEmpty){
+                  val newJ = conQ.poll()
+                  val thread = new Thread {
+                    override def run: Unit = {
+                      splitAndQueue(newJ)
+                    }
+                  }
+                  thread.start()
+                }
+                else{
+                  isBusy.set(false)
+                }
+
                 // TODO: send to client
                 println("Prepared send result: "+rs)
                 val clientIp = jobIdToIp(id)
