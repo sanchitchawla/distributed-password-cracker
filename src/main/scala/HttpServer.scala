@@ -1,3 +1,5 @@
+import java.util.concurrent.ConcurrentLinkedQueue
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
@@ -35,6 +37,9 @@ object HttpServer {
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
   var jobId: AtomicInteger = new AtomicInteger(1)
+
+  var workedJob = new AtomicInteger(1)
+
   var workerToJob = new HashMap[String,Job]()
   var jobs: List[Job] = List()
 
@@ -55,7 +60,9 @@ object HttpServer {
 
   var redis = new Jedis(REDIS_HOST)
 
-//  val r = new RedisClient("localhost", 6379)
+  val conQ = new ConcurrentLinkedQueue[Job]
+
+
 
 
   val char_array: List[Char] = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9')).toList
@@ -155,12 +162,12 @@ object HttpServer {
   def saveJob(job: dispatchedJob, ip: String, currentId: Int): Future[Done] = {
     jobs = job match {
             case dispatchedJob(hash) => {
-              val totalSize = findSize("A","AAA")
+              val totalSize = findSize("A","AAAAAA")
               jobIdToSize += (currentId -> totalSize)
               jobIdToIp += (currentId -> ip)
               println(jobIdToSize)
               println(jobIdToIp)
-              val j = Job(currentId, "A", "AAA", hash)
+              val j = Job(currentId, "A", "AAAAAA", hash)
 
               redis.set(currentId.toString,"NOT_DONE")
 
@@ -242,7 +249,7 @@ object HttpServer {
                 val clientIp = jobIdToIp(id)
                 println(clientIp)
 
-                val post = new HttpPost("http://"+"0.0.0.0" + ":8091/receive")
+                val post = new HttpPost("http://"+clientIp + ":8091/receive")
                 println(post)
                 post.setHeader("Content-type", "application/json")
                 val jsonString = new Gson().toJson(rs)

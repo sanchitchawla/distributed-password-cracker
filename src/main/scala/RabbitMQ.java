@@ -36,6 +36,10 @@ public class RabbitMQ {
 //        connection.close();
     }
 
+    public void clearQueue() throws Exception {
+        channel.queuePurge(TASK_QUEUE_NAME);
+    }
+
 //    public static void main(String[] args) throws IOException, TimeoutException {
 //        RabbitMQ rabbitMQ = new RabbitMQ();
 //        addJob(new Job(1, "A", "AAA", "ic39fhj"));
