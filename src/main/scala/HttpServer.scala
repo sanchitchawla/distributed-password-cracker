@@ -54,11 +54,12 @@ object HttpServer {
   var jobIdToResult = new HashMap[Int,String]()
 
   val CHUNK_SIZE = 125
-  val REDIS_HOST = "0.0.0.0"
+  var REDIS_HOST = "0.0.0.0"
+  var RABBIT_HOST = "0.0.0.0"
 
-  var rabbitMQ = new RabbitMQ
+  var rabbitMQ: RabbitMQ = null
 
-  var redis = new Jedis(REDIS_HOST)
+  var redis: Jedis = null
 
   val conQ = new ConcurrentLinkedQueue[Job]
 
@@ -137,7 +138,7 @@ object HttpServer {
 
       if(toLong(currentEnd)>toLong(end)) currentEnd = end
 
-      println("chunk: "+currentStart+" -> "+currentEnd)
+//      println("chunk: "+currentStart+" -> "+currentEnd)
       //      add to queue
       rabbitMQ.addJob(new Job(jobId, currentStart, currentEnd, hash))
 
@@ -150,15 +151,6 @@ object HttpServer {
     }
 
   }
-
-  // (fake) async database query api
-//  def fetchItem(jobId: Long): Future[Option[Job]] = Future {
-//    jobs.find(o => o.getJobId == jobId)
-//  }
-
-
-
-
 
   def saveJob(job: dispatchedJob, ip: String, currentId: Int): Future[Done] = {
     jobs = job match {
@@ -184,6 +176,9 @@ object HttpServer {
                 }
                 thread.start()
               }
+              else {
+                println(currentId+"Waiting++++++++++++++++++++++++++++++++++++++++++++++++")
+              }
 
 
 
@@ -197,6 +192,14 @@ object HttpServer {
   }
 
   def main(args: Array[String]) {
+
+    RABBIT_HOST = args(0)
+
+    REDIS_HOST = args(1)
+
+    rabbitMQ = new RabbitMQ(RABBIT_HOST)
+
+    redis = new Jedis(REDIS_HOST)
 
     val route: Route =
       get {
@@ -237,17 +240,17 @@ object HttpServer {
         post {
           path("status"){
             entity(as[String]) { entity =>
-              println("---------")
+//              println("---------")
               val content = entity.substring(1,entity.length()-1)
               val resultArray = content.split(",")
               val id = resultArray(0).toInt
               val isFound = resultArray(1)
-              val rs = resultArray(2)
+              var rs = resultArray(2)
               jobIdToSize(id) -= CHUNK_SIZE
-              println(jobIdToSize(id),isFound)
+//              println(jobIdToSize(id),isFound)
 
               if(isFound == "true"){
-
+                  println(id,rs)
 //                set chunk remaining to zero
 
                 jobIdToSize(id) = 0
@@ -274,6 +277,20 @@ object HttpServer {
 
                 // TODO: send to client
                 println("Prepared send result: "+rs)
+                val clientIp = jobIdToIp(id)
+                println(clientIp)
+
+                val post = new HttpPost("http://"+clientIp + ":8091/receive")
+                println(post)
+                post.setHeader("Content-type", "application/json")
+                val jsonString = new Gson().toJson(rs)
+
+                post.setEntity(new StringEntity(jsonString))
+                val httpclient = HttpClients.createDefault
+                httpclient.execute(post)
+              }
+              else if(jobIdToSize(id) <= 0){
+                rs = "404 password not found"
                 val clientIp = jobIdToIp(id)
                 println(clientIp)
 

@@ -23,7 +23,7 @@ object JobFetcher {
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-  val server = "http://192.168.1.138:8082/worker"
+//  val server = "http://192.168.1.138:8082/worker"
 
   var status = "NOT_DONE"
 
@@ -63,8 +63,10 @@ object JobFetcher {
 
 
   def main(args: Array[String]): Unit = {
-
-
+    //    SERVER ADDRESS , RABBIT ADDRESS , REDIS ADDRESS
+    val serverAddr = args(0)
+    val rabbitAddr = args(1)
+    val redisAddr = args(2)
     val route: Route =
 
     // WHEN SERVER PINGS
@@ -80,7 +82,7 @@ object JobFetcher {
     val bindingFuture = Http().bindAndHandle(route,"0.0.0.0", 8084)
     println(s"Worker server online at http://0.0.0.0:8084/\nPress RETURN to stop...")
 
-    val w = new WorkerJava()
+    val w = new WorkerJava(serverAddr,rabbitAddr,redisAddr)
     w.listen()
 
     StdIn.readLine() // let it run until user presses return

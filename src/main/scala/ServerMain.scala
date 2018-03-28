@@ -149,9 +149,10 @@ object ServerMain{
     //      val server = new Server("local")
     //      println(server.receive())
 //    splitAndQueue("A", "BB")
-    val w = "isFound,true,result, "
-    val sw: Array[String] = w.split(",")
-    println(sw(0),sw(1),sw(2),sw(3))
+//    val w = "isFound,true,result, "
+//    val sw: Array[String] = w.split(",")
+//    println(sw(0),sw(1),sw(2),sw(3))
+    println()
     //    println(toLong("A"))
     //    println(toLong("AA"))
     //    println(findSize("A","AD"))

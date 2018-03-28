@@ -2,28 +2,23 @@ import scala.concurrent.duration._
 /**
   * Created by sanch on 25-Jan-18.
   */
-object DispatcherMain  extends App{
+object DispatcherMain {
 
-  val receiver = "http://0.0.0.0:8082/createJob"
-  val startRange = "AA"
-  val endRange = "9999A"
-  val hash = "ic4wq4tfttzU2"
+  def main(args: Array[String]): Unit = {
 
-  val dispatcher: Dispatcher = new Dispatcher(receiver,hash)
+    val host = args(0)
 
-  dispatcher.serv()
+    val receiver = "http://"+host+"/createJob"
 
-//  dispatcher.send()
-  println("Sent")
+    val hash = args(1)
+//    val hash = "icXR6gWTOXkzU"
+    val dispatcher: Dispatcher = new Dispatcher(receiver, hash)
+
+    dispatcher.serv()
+
+    //  dispatcher.send()
+    println("Sent")
 
 
-
-
-  // Should auto ping every 5 seconds
-  var deadline = 5.seconds.fromNow
-  while(deadline.isOverdue()) {
-    dispatcher.ping()
-    deadline = 5.seconds.fromNow
   }
-
 }

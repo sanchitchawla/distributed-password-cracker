@@ -1,14 +1,11 @@
 import com.google.gson.Gson;
 import com.rabbitmq.client.*;
-import org.apache.http.NameValuePair;
+
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
@@ -20,9 +17,9 @@ import java.util.concurrent.TimeoutException;
 
 public class WorkerJava {
 
-    private String HOST_NAME = "0.0.0.0";
+    private Jedis redis;
 
-    private Jedis redis = new Jedis(HOST_NAME);
+    private String serverAddr;
 
     private final String TASK_QUEUE_NAME = "task_queue";
     private ConnectionFactory factory;
@@ -33,9 +30,13 @@ public class WorkerJava {
 
 
 
-    public WorkerJava() throws IOException, TimeoutException {
+    public WorkerJava(String serverAddr, String rabbitAddr, String redisAddr) throws IOException, TimeoutException {
+
+        this.serverAddr = serverAddr;
+        redis = new Jedis(redisAddr);
+
         factory = new ConnectionFactory();
-        factory.setHost("127.0.0.1");
+        factory.setHost(rabbitAddr);
         connection = factory.newConnection();
         channel = connection.createChannel();
 
@@ -101,7 +102,7 @@ public class WorkerJava {
         String t = pass;
         String jsonString = new Gson().toJson(id+","+s+","+t);
         System.out.println(jsonString);
-        HttpPost httppost = new HttpPost("http://0.0.0.0:8082/status");
+        HttpPost httppost = new HttpPost("http://"+serverAddr+"/status");
         httppost.setHeader("Content-type", "application/json");
         try{
             httppost.setEntity(new StringEntity(jsonString));

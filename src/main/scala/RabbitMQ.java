@@ -14,9 +14,9 @@ public class RabbitMQ {
     private static Channel channel;
 
 
-    public RabbitMQ() throws IOException, TimeoutException {
+    public RabbitMQ(String host) throws IOException, TimeoutException {
         factory = new ConnectionFactory();
-        factory.setHost("127.0.0.1");
+        factory.setHost(host);
         factory.setPort(5672);
         connection = factory.newConnection();
         channel = connection.createChannel();
@@ -30,7 +30,7 @@ public class RabbitMQ {
                 MessageProperties.PERSISTENT_TEXT_PLAIN,
                 job.toString().getBytes());
 
-        System.out.println(" [x] Sent '" + job.getHash() + "'");
+//        System.out.println(" [x] Sent '" + job.getHash() + "'");
 
 //        channel.close();
 //        connection.close();
