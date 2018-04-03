@@ -16,44 +16,16 @@ import scala.util.{Failure, Success}
 
 class JobFetcher {
 
-  // get job from queue and spawn working instance
 
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
-  // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
+
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
 //  val server = "http://192.168.1.138:8082/worker"
 
   var status = "NOT_DONE"
 
-//  val redis: Redis = new Redis()
-
-
-//  def postStatus(): Unit ={
-//
-//    val json = new StatusValue(status)
-//    val Json = new Gson().toJson(json)
-//
-//    println(Json)
-//
-//    // create an HttpPost object
-//    val post = new HttpPost(server)
-//
-//    // set the Content-type
-//    post.setHeader("Content-type", "application/json")
-//
-//    // add the JSON as a StringEntity
-//    post.setEntity(new StringEntity(Json))
-//
-//    // send the post request
-//    val response = HttpClientBuilder.create().build().execute(post)
-//
-//    // print the response headers
-//    println("--- HEADERS ---")
-//    response.getAllHeaders.foreach(arg => println(arg))
-//
-//  }
 
   class StatusValue(status: String){
     override def toString = "status, " + status
@@ -77,6 +49,7 @@ class JobFetcher {
         post {
           pathPrefix("stop"){
             System.exit(0)
+            complete("Shutdown")
           }
         }
       }

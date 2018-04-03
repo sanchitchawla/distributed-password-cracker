@@ -92,6 +92,7 @@ public class WorkerJava {
         if(isFound){
             pass = parallelCracker.getResult();
             redis.set(id.toString(),"DONE");
+            redis.set(hash,pass);
 
         }
         else{
@@ -101,7 +102,7 @@ public class WorkerJava {
 
         String s = String.valueOf(isFound);
         String t = pass;
-        String jsonString = new Gson().toJson(id+","+s+","+t);
+        String jsonString = new Gson().toJson(id+","+s+","+t+","+hash);
         System.out.println(jsonString);
         HttpPost httppost = new HttpPost("http://"+serverAddr+"/status");
         httppost.setHeader("Content-type", "application/json");

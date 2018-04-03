@@ -69,11 +69,11 @@ class ParallelCracker {
 
   def cracker(startRange: String, endRange: String, hash:String): Boolean ={
 
-    val passwordList = createList(startRange,endRange)
+    val passwordList: Vector[String] = createList(startRange,endRange)
 
     val chunkSize = math.ceil(passwordList.size/4.0).toInt
 
-    val chunkedList = passwordList.grouped(chunkSize).toParArray
+    val chunkedList: ParArray[Vector[String]] = passwordList.grouped(chunkSize).toParArray
 
     chunkedList.foreach{ e => checkHashed(e,hash)}
 //    passwordList.exists(checkHashed(_,hash))

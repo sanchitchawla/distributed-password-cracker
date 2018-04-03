@@ -30,23 +30,11 @@ public class RabbitMQ {
                 MessageProperties.PERSISTENT_TEXT_PLAIN,
                 job.toString().getBytes());
 
-//        System.out.println(" [x] Sent '" + job.getHash() + "'");
-
-//        channel.close();
-//        connection.close();
     }
 
     public void clearQueue() throws Exception {
         channel.queuePurge(TASK_QUEUE_NAME);
     }
 
-//    public static void main(String[] args) throws IOException, TimeoutException {
-//        RabbitMQ rabbitMQ = new RabbitMQ();
-//        addJob(new Job(1, "A", "AAA", "ic39fhj"));
-//        addJob(new Job(2, "A", "AAA", "ic4wq4tfttzU2"));
-//
-////        WorkerJava workerJava = new WorkerJava();
-////        workerJava.listen();
-//    }
 
 }

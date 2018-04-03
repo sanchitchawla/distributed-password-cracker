@@ -1,6 +1,5 @@
 import java.io.{BufferedReader, InputStreamReader}
 
-import HttpServer.{jobIdToResult, system}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
@@ -64,12 +63,6 @@ class Dispatcher(receiver: String, hash:String) {
     println("--- HEADERS ---")
     response.getAllHeaders.foreach(arg => println(arg))
 
-//    val formData = Marshal(FormData(Map("hash"->hash))).to[RequestEntity]
-//    val content = for {
-//      request <- Marshal(formData).to[RequestEntity]
-//      response <- Http().singleRequest(HttpRequest(method = HttpMethods.POST, uri = receiver, entity = request))
-//      entity <- Unmarshal(response.entity).to[String]
-//    } yield entity
 //
 
   }
@@ -97,17 +90,7 @@ class Dispatcher(receiver: String, hash:String) {
     route
   }
 
-  def ping(): Unit = {
-    // Ping
-    val command = "ping " + receiver
-    val p : Process = Runtime.getRuntime.exec(command)
-    val inputStreamReader = new BufferedReader(new InputStreamReader(p.getInputStream))
 
-    var s: String = ""
-    while ((s = inputStreamReader.readLine()) != null) {
-      println(s)
-    }
-  }
 
   class HashValue (var hash: String) {
     override def toString = "hash" + ", " + hash

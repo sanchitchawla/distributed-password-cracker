@@ -5,13 +5,12 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import akka.Done
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.{post, _}
 import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
-import ServerMain.{Status, workerToJob}
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import com.google.gson.Gson
@@ -26,7 +25,6 @@ import scala.collection.Set
 import scala.collection.mutable.HashMap
 import scala.io.StdIn
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.parsing.json.JSONObject
 
 class HttpServer {
   // needed to run the route
@@ -42,7 +40,7 @@ class HttpServer {
 
   var isBusy = new AtomicBoolean(false)
 
-//  var workerToJob = new HashMap[String,Job]()
+  var clientIsAlive = 1
 
   var workerSet: Set[String] = Set()
   var jobs: List[Job] = List()
@@ -57,7 +55,7 @@ class HttpServer {
   var jobIdToIp = new HashMap[Int,String]()
   var jobIdToResult = new HashMap[Int,String]()
 
-  val CHUNK_SIZE = 125
+  val CHUNK_SIZE = 3907
   var REDIS_HOST = "0.0.0.0"
   var RABBIT_HOST = "0.0.0.0"
 
@@ -137,20 +135,13 @@ class HttpServer {
     var currentStart = start
     while (!needToStop.get() && (toLong(currentEnd) < toLong(end))){
       currentEnd = currentStart
-      currentEnd = nextStr(currentEnd,2)
-      currentEnd = nextStr(currentEnd,2)
+      currentEnd = nextStr(currentEnd,3)
 
       if(toLong(currentEnd)>toLong(end)) currentEnd = end
 
-//      println("chunk: "+currentStart+" -> "+currentEnd)
-      //      add to queue
       rabbitMQ.addJob(new Job(jobId, currentStart, currentEnd, hash))
 
       currentStart = nextStr(currentEnd,1)
-
-
-
-
 
     }
 
@@ -159,12 +150,12 @@ class HttpServer {
   def saveJob(job: dispatchedJob, ip: String, currentId: Int): Future[Done] = {
     jobs = job match {
             case dispatchedJob(hash) => {
-              val totalSize = findSize("A","AAAAAA")
+              val totalSize = findSize("A","99999999")
               jobIdToSize += (currentId -> totalSize)
               jobIdToIp += (currentId -> ip)
               println(jobIdToSize)
               println(jobIdToIp)
-              val j = Job(currentId, "A", "AAAAAA", hash)
+              val j = Job(currentId, "A", "99999999", hash)
 
               redis.set(currentId.toString,"NOT_DONE")
 
@@ -184,8 +175,6 @@ class HttpServer {
                 println(currentId+"Waiting++++++++++++++++++++++++++++++++++++++++++++++++")
               }
 
-
-
               j :: jobs
 
             }
@@ -204,6 +193,14 @@ class HttpServer {
     for (eachWorker <- allWorkers) sendSignaltoWorker(eachWorker)
   }
 
+  class Status (var status: String) {
+    override def toString = "status" + ", " + status
+  }
+
+  def setDead = {
+    clientIsAlive = 0
+  }
+
   def sendSignaltoWorker(receiver: String): Unit ={
 
     val json = new Status("stop")
@@ -218,6 +215,10 @@ class HttpServer {
     val response = HttpClientBuilder.create().build().execute(post)
 
 
+  }
+
+  def killClient = {
+    // PURGE QUEUE AND KILL JOB
   }
 
   def run(args: Array[String]) {
@@ -254,15 +255,54 @@ class HttpServer {
                 println("IP: " + incomingIp)
                 println("Job: " + job)
 
-                var currentJobId = jobId.getAndIncrement().toInt
+                val hash = job.hash
 
+                val old_hash = redis.get(hash)
 
-                val saved: Future[Done] = saveJob(job,incomingIp,currentJobId)
-                onComplete(saved) { done =>
-                  complete(currentJobId.toString)
+                if(old_hash!=null){
+                  val post = new HttpPost("http://" + incomingIp + ":8091/receive")
+
+                  println(post)
+                  post.setHeader("Content-type", "application/json")
+
+                  val jsonString = new Gson().toJson(old_hash)
+
+                  post.setEntity(new StringEntity(jsonString))
+
+                  val httpclient = HttpClients.createDefault
+                  httpclient.execute(post)
+
+                  complete("complete"+old_hash)
+
                 }
+                else{
+
+                  var currentJobId = jobId.getAndIncrement().toInt
+
+                  val saved: Future[Done] = saveJob(job,incomingIp,currentJobId)
+                  onComplete(saved) { done =>
+                    complete(currentJobId.toString)
+                  }
+
+                }
+
             }
           }
+          }
+        } ~
+        post {
+          path("ping") {
+            extractClientIP {clientIp =>
+              entity(as[dispatchedJob]) { job =>
+
+
+                val incomingIp = clientIp.toOption.map(_.getHostAddress).getOrElse("unknown")
+
+
+                clientIsAlive = 1
+                complete("ping received")
+              }
+            }
           }
         } ~
         post {
@@ -288,10 +328,7 @@ class HttpServer {
                   println(id, rs)
                   //                set chunk remaining to zero
 
-                  jobIdToSize(id) = 0
-                  println("Job size: " + jobIdToSize(id))
 
-                  // TODO: send to client
                   println("Prepared send result: " + rs)
                   val clientIp = jobIdToIp(id)
                   println(clientIp)
@@ -306,9 +343,12 @@ class HttpServer {
                   httpclient.execute(post)
                   needToStop.set(true)
                   println("Interupt+++++++++")
-                  //                Thread.sleep(5000)
 
                   rabbitMQ.clearQueue()
+
+                  jobIdToSize(id) = 0
+                  println("Job size: " + jobIdToSize(id))
+
                   println(conQ.size())
                   needToStop.set(false)
                   if (!conQ.isEmpty) {
@@ -355,11 +395,18 @@ class HttpServer {
     StdIn.readLine() // let it run until user presses return
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+      .onComplete(_ ? system.terminate()) // and shutdown when done
     sys.addShutdownHook({
       println("Shutting down workers ")
       shutdownWorkers()
       println("All workers are safely shut")
     })
+
+    import scala.concurrent.duration._
+    import scala.concurrent.ExecutionContext
+    import ExecutionContext.Implicits.global
+
+    system.scheduler.schedule(0 seconds, 30 seconds)( setDead)
+    system.scheduler.schedule(0 seconds, 60 seconds) (killClient)
   }
 }
