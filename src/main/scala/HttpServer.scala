@@ -11,6 +11,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
+import akka.pattern.ask
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import com.google.gson.Gson
@@ -395,7 +396,7 @@ class HttpServer {
     StdIn.readLine() // let it run until user presses return
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ ? system.terminate()) // and shutdown when done
+      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
     sys.addShutdownHook({
       println("Shutting down workers ")
       shutdownWorkers()
